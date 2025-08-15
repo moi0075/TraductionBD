@@ -1,13 +1,11 @@
 # Main pipeline
 from ocr import extract_text_from_image,ocr_results_to_dataframe, filter_by_score, cluster_polygons, add_cluster_column, bounding_boxes_by_cluster_with_text
-from img_tools import save_crops_from_coords, resize_image
+from img_tools import save_crops_from_coords, load_image_as_numpy
 from traduction import ollama_translate_en_fr, translate_cluster_texts
 
 def main(image):
-
-
     # Step 1: Extract text from image
-    img_np, factor = resize_image(image, 2500)
+    img_np, factor = load_image_as_numpy(image, None)
     result = extract_text_from_image(img_np)
 
     # Step 2: Convert OCR results to DataFrame
@@ -32,10 +30,10 @@ def main(image):
     # Step 8 : Remove text from img
 
     # Step 9 : Translate the text in each cluster
-    df_translated = translate_cluster_texts(df_boxes, ollama_translate_en_fr, context="Translating dialogues from a webtoon", model="gemma3n:e4b")
+    df_translated = translate_cluster_texts(df_boxes, ollama_translate_en_fr, context="Translating dialogues from a webtoon", model="gemma3:12b")
     print(df_translated)
         
     # Step 10 : Write translation on img
 
 if __name__ == '__main__':
-    main("notebooks/ch_16_4.jpg")
+    main("notebooks/ch_0_2.jpg")

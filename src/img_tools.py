@@ -1,30 +1,29 @@
 from PIL import Image
 import numpy as np
 
-def resize_image(img_path, max_side):
+def load_image_as_numpy(img_path, max_side=None):
     """
-    Redimensionne une image pour que son plus grand côté <= max_side.
-    Retourne :
-        - l'image redimensionnée en numpy.ndarray (RGB)
-        - le facteur de réduction (ex: 2.0 signifie divisée par 2)
+    Charge une image en numpy.ndarray (RGB), avec option de redimensionnement.
+    Si max_side est None, l'image n'est pas redimensionnée.
+    
+    Returns:
+        - numpy.ndarray : image RGB
+        - float : facteur de réduction (1.0 si pas de resize)
     """
-    # Ouvrir et convertir en RGB
     img = Image.open(img_path).convert("RGB")
-    
-    # Dimensions originales
     w, h = img.size
-    
-    # Calcul du facteur de réduction
+
+    if max_side is None:
+        return np.array(img), 1.0
+
     scale = min(max_side / w, max_side / h, 1.0)
-    
-    # Nouvelle taille
     new_size = (int(w * scale), int(h * scale))
     img_resized = img.resize(new_size, Image.Resampling.LANCZOS)
-    
-    # Facteur : combien l'image a été réduite (w / new_w)
+
     reduction_factor = w / new_size[0]
-    
+
     return np.array(img_resized), reduction_factor
+
 
 def save_crops_from_coords(img_np, coords_list, output_folder):
     """

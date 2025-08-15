@@ -2,7 +2,7 @@
 import ollama
 import re
 
-def ollama_translate_en_fr(text, context="", all_dialogues="", model="gemma3n:e2b"):
+def ollama_translate_en_fr(text, context="", previous_dialogues="", model="gemma3n:e2b"):
     """
     Translate English text into French using Ollama.
     
@@ -17,8 +17,8 @@ def ollama_translate_en_fr(text, context="", all_dialogues="", model="gemma3n:e2
     prompt = (
         f"Translate the following text from English to French.\n"
         f"Context: {context}\n"
-        f"All dialogues : {all_dialogues}\n"
-        f"Instruction: ONLY output the translated French text in UPPERCASE, naturally and fluently, as dialogue. Remove or ignore any OCR artifacts like /, #, or other errors. Do not add explanations, notes, line breaks, or extra formatting."
+        f"Previous dialogues : {previous_dialogues}\n"
+        f"Instruction: ONLY output the translated French text in naturally and fluently, as dialogue. Remove or ignore any OCR artifacts like /, #, or other errors. Do not add explanations, notes, line breaks, or extra formatting."
         f"If you absolutely do not know how to translate a word or phrase, do not translate it and leave it as-is.\n"
         f"Text: {text}"
     )
@@ -26,7 +26,10 @@ def ollama_translate_en_fr(text, context="", all_dialogues="", model="gemma3n:e2
     response = ollama.chat(
         model=model,
         messages=[
-            {"role": "system", "content": "You are a professional English-to-French translator. Translate the text naturally and fluently as spoken dialogue in a comic or webtoon. Ignore any OCR artifacts or incorrect characters."},
+            {"role": "system", "content": "You translate English phrases into French in a natural and fluent style. "
+             "Do NOT translate word by word. "
+             "Render the dialogue as it would sound naturally in French, suitable for a comic or webtoon. "
+             "Ignore any OCR artifacts or incorrect characters."},
             {"role": "user", "content": prompt}
         ]
     )
@@ -51,7 +54,7 @@ def translate_cluster_texts(df_boxes, translator_func, context="Translating dial
     - df_result : DataFrame identique à df_boxes avec une colonne 'translated'
     """
     df_result = df_boxes.copy()
-    all_dialogues = df_result['text'].str.cat(sep=' ')
+    previous_dialogues = ""
 
     translated_texts = []
 
@@ -63,12 +66,15 @@ def translate_cluster_texts(df_boxes, translator_func, context="Translating dial
         translated_text = translator_func(
             text=cluster_text,
             context=context,
-            all_dialogues=all_dialogues,
+            previous_dialogues=previous_dialogues,
             model=model
         )
 
         print(f"Cluster {row['cluster']} translated:\n{translated_text}\n")
         translated_texts.append(translated_text)
+
+        # Mettre à jour les dialogues précédents
+        previous_dialogues += " " + cluster_text
 
     # Ajouter la colonne 'translated'
     df_result["translated"] = translated_texts

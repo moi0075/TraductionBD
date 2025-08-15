@@ -4,6 +4,7 @@ from img_tools import save_crops_from_coords, load_image_as_numpy
 from traduction import ollama_translate_en_fr, translate_cluster_texts
 
 def main(image):
+    
     # Step 1: Extract text from image
     img_np, factor = load_image_as_numpy(image, None)
     result = extract_text_from_image(img_np)
@@ -29,8 +30,9 @@ def main(image):
 
     # Step 8 : Remove text from img
 
-    # Step 9 : Translate the text in each cluster
+    # Step 9 : Translate the text in each cluster deepseek-r1:14b gemma3:12b
     df_translated = translate_cluster_texts(df_boxes, ollama_translate_en_fr, context="Translating dialogues from a webtoon", model="gemma3:12b")
+    df_translated['translated_upper'] = df_translated['translated'].str.upper()
     print(df_translated)
         
     # Step 10 : Write translation on img

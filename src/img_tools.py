@@ -309,3 +309,30 @@ def draw_centered_text(
         "total_line_height": chosen_line_height,
         "line_spacing_percent": line_spacing_percent
     }
+
+def paste_image(img1_path, img2_path, x, y, save_path=None):
+    """
+    Colle img2 sur img1 aux coordonnées (x, y).
+
+    Parameters:
+        img1_path (str): Chemin vers l'image de fond.
+        img2_path (str): Chemin vers l'image à coller.
+        x (int): Coordonnée x où coller l'image.
+        y (int): Coordonnée y où coller l'image.
+        save_path (str, optional): Chemin pour sauvegarder le résultat. Si None, retourne l'image PIL.
+
+    Returns:
+        Image: Objet PIL.Image si save_path est None.
+    """
+    # Ouvrir les images
+    img1 = Image.open(img1_path).convert("RGBA")
+    img2 = Image.open(img2_path).convert("RGBA")
+
+    # Coller img2 sur img1 aux coordonnées (x, y)
+    img1.paste(img2, (x, y), img2)  # le 3e param permet de gérer la transparence
+
+    if save_path:
+        img1.save(save_path)
+        print(f"Image saved to {save_path}")
+    else:
+        return img1

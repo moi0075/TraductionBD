@@ -1,5 +1,10 @@
 # Add your dependencies here
-requests
-pillow
-openai
-tesserocr
+paddleocr
+paddlepaddle
+pandas
+numpy
+matplotlib
+shapely
+networkx
+ollama
+websocket

@@ -9,7 +9,7 @@ def extract_text_from_image(image_path):
         use_doc_orientation_classify=False,
         use_doc_unwarping=False,
         use_textline_orientation=False,
-        lang='fr')
+        lang='fr') # model fr mieux pour l'anglais pas logique mais marche mieux...
     result = ocr.predict(
         input=image_path)
     

@@ -7,18 +7,43 @@ import os
 import json
 from PIL import Image
 from pathlib import Path
+from paddleocr import PaddleOCR
+import pandas as pd
+import shutil
 
-def main(image):
+def main(image, ocr):
 
-    # Step 1: Extract text from image
-    img_np, factor = load_image_as_numpy(image, None)
-    result = extract_text_from_image(img_np)
+    max_attempts = 3
+    df = None
+    for attempt in range(1, max_attempts + 1):
+        print(f"🔄 OCR attempt {attempt} for {image}")
 
-    # Step 2: Convert OCR results to DataFrame
-    df = ocr_results_to_dataframe(result)
+        # Step 1: Extract text from image
+        img_np, factor = load_image_as_numpy(image, None)
+        result = extract_text_from_image(img_np, ocr)
 
-    # Step 3: Filter DataFrame by score
-    filtered_df = filter_by_score(df, min_score=0.7)
+        # Step 2: Convert OCR results to DataFrame
+        df = ocr_results_to_dataframe(result)
+
+        # Step 3: Filter DataFrame by score
+        filtered_df = filter_by_score(df, min_score=0.7)    
+    
+        if not filtered_df.empty:
+            print(f"✅ OCR successful on attempt {attempt}")
+            break  # On sort dès qu'on a des résultats
+        else:
+            print(f"⚠️ No text detected on attempt {attempt}")
+            if attempt == max_attempts:
+                # Après 3 tentatives, copier l'image telle quelle
+                img_text_drawn_outputs = os.path.join(
+                    "outputs", "translated_chapter",
+                    os.path.splitext(os.path.relpath(file_path, "inputs/scans"))[0] + ".png"
+                )
+                os.makedirs(os.path.dirname(img_text_drawn_outputs), exist_ok=True)
+                img = Image.open(image)
+                img.save(img_text_drawn_outputs, format="PNG")
+                print(f"📄 Image copiée sans OCR dans {img_text_drawn_outputs}")
+                return
 
     # Step 4 : Cluster the polygons
     clusters = cluster_polygons(filtered_df, "x1","y1","x2","y2","x3","y3","x4","y4", margin_factor=0.2)
@@ -85,7 +110,8 @@ def main(image):
         )
 
     # Step 11 : Paste the translated text images onto the original image
-    img_text_drawn_outputs = "outputs\\translated_chapter\\"+os.path.splitext(os.path.basename(image))[0]+".png"
+    img_text_drawn_outputs = os.path.join("outputs", "translated_chapter",os.path.splitext(os.path.relpath(file_path, "inputs/scans"))[0] + ".png")
+    os.makedirs(os.path.dirname(img_text_drawn_outputs), exist_ok=True)# Création du dossier parent si nécessaire
     img = Image.open(image)
     img.save(img_text_drawn_outputs, format="PNG")
 
@@ -98,14 +124,23 @@ def main(image):
         paste_image(img_text_drawn_outputs, text_drawn_outputs+"\\"+file_name, x_min, y_min, save_path=img_text_drawn_outputs)
 
 if __name__ == '__main__':
-    launch_exe(r"C:\Users\teo\AppData\Local\Programs\Ollama\ollama app.exe", timeout=10)
+    launch_exe(r"C:\Users\teo\AppData\Local\Programs\Ollama\ollama app.exe", timeout=1)
 
-    clean_folder("outputs/ocr_outputs")
-    clean_folder("outputs/text_remove_outputs")
-    clean_folder("outputs/text_drawn_outputs")
-    clean_folder("outputs/translated_chapter")
+    ocr = PaddleOCR(
+    use_doc_orientation_classify=False,
+    use_doc_unwarping=False,
+    use_textline_orientation=False,
+    lang='fr')
+    
+    base_dir = "inputs//scans"
+    for root, dirs, files in os.walk(base_dir):
+        for file in files:
+            if file.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                file_path = os.path.join(root, file)
+                print(file_path)
 
-    folder = Path("inputs/scans")
-    for file_path in folder.iterdir():
-        print(file_path)
-        main(file_path)
+                clean_folder("outputs/ocr_outputs")
+                clean_folder("outputs/text_remove_outputs")
+                clean_folder("outputs/text_drawn_outputs")
+                main(file_path,ocr)
+
